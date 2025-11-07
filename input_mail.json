@@ -1,0 +1,48 @@
+{
+  "emails": [
+    {
+      "id": "001",
+      "from": "sai.kumar@example.com",
+      "to": ["manager@example.com"],
+      "cc": ["teamlead@example.com"],
+      "bcc": [],
+      "subject": "Project Status Update",
+      "body": "Hello Sir,\n\nI wanted to update you that the project module 'Traffic Prediction System' has reached 85% completion. We’re currently testing model accuracy.\n\nBest regards,\nSai Kumar",
+      "date": "2025-11-07T10:30:00+05:30",
+      "attachments": [
+        {
+          "filename": "project_report.pdf",
+          "mimetype": "application/pdf",
+          "size_kb": 540
+        }
+      ],
+      "labels": ["Work", "Project"],
+      "read": true,
+      "priority": "normal"
+    },
+    {
+      "id": "002",
+      "from": "college@klu.edu",
+      "to": ["sai.kumar@example.com"],
+      "subject": "AI/ML Cohort Internship Selection",
+      "body": "Dear Student,\n\nYou have been shortlisted for the first-round interview for the Sairajsri Business Solutions internship.\nPlease attend at 2:00 PM tomorrow.\n\nRegards,\nPlacement Cell",
+      "date": "2025-11-06T18:45:00+05:30",
+      "attachments": [],
+      "labels": ["College", "Internship"],
+      "read": false,
+      "priority": "high"
+    },
+    {
+      "id": "003",
+      "from": "github@notifications.com",
+      "to": ["sai.kumar@example.com"],
+      "subject": "[FileHub] Commit Confirmation",
+      "body": "New commit pushed to repository 'FileHub':\nCommit ID: 9f2e8d1\nMessage: Added calendar upload and mail sync features.",
+      "date": "2025-11-07T09:15:00+05:30",
+      "attachments": [],
+      "labels": ["GitHub", "Code"],
+      "read": true,
+      "priority": "low"
+    }
+  ]
+}
