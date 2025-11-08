@@ -1,180 +1,179 @@
 import streamlit as st
-import pandas as pd
 import requests
-from io import StringIO
-from datetime import datetime
-import plotly.express as px
+import pandas as pd
+import matplotlib.pyplot as plt
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
 
-# -------------------------------------------------------------
-# 🎨 PAGE CONFIG
-# -------------------------------------------------------------
+# Load environment and configure Gemini
+load_dotenv()
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+MODEL_NAME = os.getenv("MODEL_NAME", "models/gemini-2.5-flash")
+
+# ------------------------------------------------------------
+# 🧭 Page Setup
+# ------------------------------------------------------------
 st.set_page_config(
-    page_title="AI Timesheet Generator",
+    page_title="AI Timesheet Analyzer",
     page_icon="🧠",
-    layout="wide"
+    layout="centered"
 )
 
-# -------------------------------------------------------------
-# 🌈 CUSTOM CSS
-# -------------------------------------------------------------
+# ------------------------------------------------------------
+# 🎨 Custom CSS for professional UI
+# ------------------------------------------------------------
 st.markdown("""
 <style>
 body {
-    background: radial-gradient(circle at 20% 30%, #0f2027, #203a43, #2c5364);
-    color: #fff;
+    background: linear-gradient(to right, #eef2f3, #d9e4ec);
+    font-family: 'Inter', sans-serif;
 }
 .main-container {
-    padding: 2rem;
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.3);
+    background: white;
+    padding: 2rem 3rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
 }
 .title {
     text-align: center;
-    font-size: 2.8em;
+    font-size: 2.5em;
+    color: #004aad;
     font-weight: 800;
-    color: #00e0c6;
-    margin-bottom: 0.3em;
+    margin-bottom: 0.5em;
 }
 .subtitle {
     text-align: center;
+    color: #666;
     font-size: 1.1em;
-    color: #ccc;
-    margin-bottom: 1.5em;
+    margin-bottom: 2em;
 }
 .stButton>button {
-    background: linear-gradient(90deg, #00bfa5, #0091ea);
+    background: linear-gradient(90deg, #0072ff, #00c6ff);
     color: white;
-    font-weight: 700;
     border: none;
+    font-weight: 600;
     border-radius: 10px;
-    padding: 0.8em 1em;
+    padding: 0.7em 1.2em;
     transition: 0.3s;
 }
 .stButton>button:hover {
-    background: linear-gradient(90deg, #0091ea, #00bfa5);
     transform: scale(1.03);
 }
 .dataframe-container {
-    background: rgba(255,255,255,0.06);
+    background: #fafafa;
     border-radius: 10px;
     padding: 10px;
-    overflow-x: auto;
-}
-.footer {
-    text-align: center;
-    color: #aaa;
-    margin-top: 1.5em;
-    font-size: 0.9em;
+    border: 1px solid #eee;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------------------------------------------
-# 🧭 HEADER
-# -------------------------------------------------------------
-st.markdown('<div class="title">🧠 AI Timesheet Generator</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Upload your Calendar (.ics), Email (.json/.csv), and Git data — Gemini AI will auto-generate your smart productivity report.</div>', unsafe_allow_html=True)
-
-# -------------------------------------------------------------
-# ⚙️ SIDEBAR
-# -------------------------------------------------------------
-st.sidebar.header("⚙️ Configuration")
-backend_url = st.sidebar.text_input("Backend API URL", "http://127.0.0.1:8000/upload_files/")
-st.sidebar.divider()
-st.sidebar.markdown("💡 Tip: Upload any combination of Calendar, Email, or Git data to build your AI-powered timesheet.")
-
-# -------------------------------------------------------------
-# 📁 FILE UPLOADS
-# -------------------------------------------------------------
+# ------------------------------------------------------------
+# 🧾 Title Section
+# ------------------------------------------------------------
+st.markdown('<div class="title">AI Timesheet Analyzer</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Aggregate your Calendar, Email, and Git data. Get insights and time-management advice using Gemini AI.</div>', unsafe_allow_html=True)
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
-st.subheader("📤 Upload Your Activity Data")
-col1, col2 = st.columns(2)
+# ------------------------------------------------------------
+# 📁 File Uploads
+# ------------------------------------------------------------
+st.subheader("📤 Upload Your Activity Files")
 
-with col1:
-    calendar_file = st.file_uploader("📅 Calendar (.ics)", type=["ics"])
-    repo_path = st.text_input("💻 Git Repository Path (optional)")
+calendar_file = st.file_uploader("📅 Calendar File (.ics)", type=["ics"])
+email_file = st.file_uploader("📧 Email File (.json)", type=["json"])
+repo_path = st.text_input("💻 Git Repository Path (optional)")
 
-with col2:
-    email_file = st.file_uploader("📧 Email Data (.json or .csv)", type=["json", "csv"])
-    user_name = st.text_input("👤 Your Name", value="Sai Kumar Nimmala")
+# ------------------------------------------------------------
+# 🚀 Process Button
+# ------------------------------------------------------------
+if st.button("Generate Timesheet Report"):
+    with st.spinner("Processing your data... Please wait ⏳"):
+        files, data = {}, {"repo_path": repo_path}
+        if calendar_file: files["calendar_file"] = calendar_file
+        if email_file: files["email_file"] = email_file
 
-# -------------------------------------------------------------
-# 🚀 PROCESS
-# -------------------------------------------------------------
-if st.button("🚀 Generate Timesheet"):
-    files, data = {}, {"user_name": user_name, "git_repo_path": repo_path}
-    if calendar_file: files["calendar_file"] = calendar_file
-    if email_file: files["email_file"] = email_file
-
-    with st.spinner("🧠 Generating your AI Timesheet... Please wait..."):
         try:
-            response = requests.post(backend_url, data=data, files=files)
-            if response.status_code == 200:
-                result = response.json()
-                st.success("✅ Timesheet Generated Successfully!")
+            res = requests.post("http://127.0.0.1:8000/process", files=files, data=data, timeout=90)
+            if res.status_code != 200:
+                st.error(f"❌ Error: {res.text}")
+            else:
+                result = res.json()
+                df = pd.read_csv(result["csv_path"])
 
-                csv_data = result["csv_data"]
-                summary = result["summary"]
+                st.success("✅ Timesheet generated successfully!")
 
-                st.subheader("📊 Timesheet Summary")
-                st.info(summary["ai_summary"])
-                st.write(f"**Total Working Hours:** {summary['total_hours']} hrs")
+                # ------------------------------------------------------------
+                # 🧠 AI Summary Section
+                # ------------------------------------------------------------
+                st.markdown("### 🧠 AI Summary of Productivity")
+                st.markdown(f"""
+                <div style='background:#f0f7ff;border-left:6px solid #0072ff;padding:15px;border-radius:10px;margin-bottom:25px;'>
+                {result["ai_summary"]}
+                </div>
+                """, unsafe_allow_html=True)
 
-                df = pd.read_csv(StringIO(csv_data))
+                # ------------------------------------------------------------
+                # 📊 Visualization (medium-size charts)
+                # ------------------------------------------------------------
+                st.markdown("### 📈 Productivity Insights")
+
+                fig_col1, fig_col2 = st.columns(2)
+
+                with fig_col1:
+                    st.markdown("#### Time Spent by Activity Type")
+                    fig, ax = plt.subplots(figsize=(5, 3))
+                    df.groupby("type")["hours"].sum().plot(kind="bar", color="#0072ff", ax=ax)
+                    ax.set_ylabel("Hours")
+                    ax.set_xlabel("Activity Type")
+                    ax.set_title("")
+                    plt.tight_layout()
+                    st.pyplot(fig)
+
+                with fig_col2:
+                    st.markdown("#### Work Distribution")
+                    fig2, ax2 = plt.subplots(figsize=(4, 3))
+                    df.groupby("type")["hours"].sum().plot(
+                        kind="pie",
+                        autopct="%1.1f%%",
+                        colors=["#0072ff", "#00c6ff", "#4ecdc4"],
+                        startangle=90,
+                        ax=ax2
+                    )
+                    ax2.set_ylabel("")
+                    plt.tight_layout()
+                    st.pyplot(fig2)
+
+                # ------------------------------------------------------------
+                # 📅 Display Data Table
+                # ------------------------------------------------------------
+                st.markdown("### 🗓️ Aggregated Timesheet Data")
                 st.markdown('<div class="dataframe-container">', unsafe_allow_html=True)
                 st.dataframe(df, use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-                # -------------------------------------------------------------
-                # 🥧 PIE CHART VISUALIZATION
-                # -------------------------------------------------------------
-                if "type" in df.columns and "duration_hours" in df.columns:
-                    st.subheader("📈 Work Distribution by Activity Type")
-                    chart_data = df.groupby("type")["duration_hours"].sum().reset_index()
-                    fig = px.pie(
-                        chart_data,
-                        names="type",
-                        values="duration_hours",
-                        title="Time Spent by Activity Type",
-                        color_discrete_sequence=px.colors.qualitative.Set3
-                    )
-                    fig.update_traces(textposition='inside', textinfo='percent+label')
-                    st.plotly_chart(fig, use_container_width=True)
+                # ------------------------------------------------------------
+                # 💬 Chat with Gemini
+                # ------------------------------------------------------------
+                st.divider()
+                st.markdown("### 💬 Ask Gemini About Your Productivity")
 
-                st.download_button(
-                    label="⬇️ Download Timesheet CSV",
-                    data=csv_data.encode("utf-8"),
-                    file_name=f"{user_name.replace(' ', '_')}_timesheet.csv",
-                    mime="text/csv"
-                )
-
-                # 🔁 Save to session
-                if "history" not in st.session_state:
-                    st.session_state["history"] = []
-                st.session_state["history"].append({
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "user": user_name,
-                    "hours": summary["total_hours"],
-                    "summary": summary["ai_summary"]
-                })
-            else:
-                st.error("❌ Failed to process files. Please check backend logs.")
-                st.json(response.json())
+                user_input = st.text_input("Ask Gemini something about your work pattern or time management:")
+                if st.button("Ask Gemini"):
+                    try:
+                        model = genai.GenerativeModel(MODEL_NAME)
+                        response = model.generate_content(
+                            f"Based on this timesheet data:\n{df.to_string(index=False)}\n\n{user_input}"
+                        )
+                        st.markdown(f"""
+                        <div style='background:#eef9f4;border-left:5px solid #00c6ff;padding:12px;border-radius:10px;'>
+                        <b>Gemini:</b> {response.text}
+                        </div>
+                        """, unsafe_allow_html=True)
+                    except Exception as e:
+                        st.error(f"⚠️ Gemini Chat Error: {e}")
         except Exception as e:
-            st.error(f"⚠️ Error occurred: {e}")
+            st.error(f"⚠️ Server Error: {e}")
 
 st.markdown('</div>', unsafe_allow_html=True)
-
-# -------------------------------------------------------------
-# 🕒 HISTORY
-# -------------------------------------------------------------
-if "history" in st.session_state and st.session_state["history"]:
-    st.divider()
-    st.subheader("📜 Previous Generations")
-    hist_df = pd.DataFrame(st.session_state["history"])
-    st.dataframe(hist_df, use_container_width=True)
-
-

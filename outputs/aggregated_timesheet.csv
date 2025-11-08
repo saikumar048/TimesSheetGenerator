@@ -1,0 +1,9 @@
+date,activity,type,hours,description
+2025-11-01,Team Sync,Calendar Event,1.0,Weekly team sync-up meeting.
+2025-11-01,Project Kickoff Meeting,Email,0.5,
+2025-11-02,Client Demo,Calendar Event,1.0,Presentation to the client.
+2025-11-02,Client Feedback on Module A,Email,0.5,
+2025-11-03,Code Review,Calendar Event,1.0,Peer code review session.
+2025-11-03,Weekly Standup Summary,Email,0.5,
+2025-11-04,Design Discussion,Calendar Event,1.0,UI/UX design brainstorming.
+2025-11-04,Reminder: Code Freeze Approaching,Email,0.5,
